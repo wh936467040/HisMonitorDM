@@ -18,7 +18,7 @@ MONITOR_LIBS= -lsend -ldcisg
 	$(CPP) -c  $(CFLAGS) $< -o $@
 
 source_objects=log.o Parameter.o Runner.o alarmSet.o CollectLog.o getAndSendSession.o MetricDao.o MySendFactory.o\
-		MyUtil.o Metric.o main.o
+		MyUtil.o Metric.o  Thread.o MainDbIpGet.o main.o MyNet.o
 
 object_files=$(source_objects) 
 

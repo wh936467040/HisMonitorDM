@@ -1,32 +1,60 @@
 #include <iostream>
 #include "sendinfo.h"
 #include "MetricDao.h"
+#include "MyUtil.h"
 #include "dcidefine.h"
 #include "Parameter.h"
 #include "alarmSet.h"
+#include "MySendFactory.h"
+#include "MainDbIpGet.h"
+#include "getAndSendSession.h"
 #include "log.h"
 using namespace std;
 string getDbStartTime();
 vector<AlarmTable *> alarmSet;
+struct NOTICE_INFO alarmInfo;
+int MetricDao::connectMark = 0;
+static int is_init = 1;
+int MetricDao::connectAlarmMark = -1;
+string dbHost = "";
 MetricDao::MetricDao()
 {
-	connectMark = 0;
-	string ip = Parameter::dbIp;
-	string user = Parameter::dbUser;
-	string pwd = Parameter::dbPwd;
-	cout << ip << ";"<<user<<";"<<pwd<<endl;
-	if(dbConn.Connect(ip.c_str(), user.c_str(), pwd.c_str(), false, &error))
+	dbHost = MainDbIpGet::getLocalNode();
+	if(dbConn.Connect(Parameter::dbIp.c_str(), Parameter::dbUser.c_str(), Parameter::dbPwd.c_str(), false, &error))
 	{
 		connectMark = 1;
 		cout <<"db connect success" << endl;
+		if(connectAlarmMark >0 )
+		{
+			alarmInfo.itemid="00020052";
+        		alarmInfo.data =  dbHost + "数据库服务连接恢复正常";
+			string statTime = MyUtil::getTime(Parameter::sleepTime);
+			MySendFactory::sendAlarm ->sendNoticeInfo(Parameter::nodeId,statTime,alarmInfo);
+			connectAlarmMark = -1;
+		}
 	}
 	else
 	{
-		LOG_ERROR("%s: %s","db connect failed!",error.error_info);
+		//LOG_ERROR("%s: %s","db connect failed!",error.error_info);
 		connectMark = -1;
 		dbConn.DisConnect(&error);
 		cout<<"db connect error: " << error.error_info << endl;
 	}
+
+	if(connectMark < 0 && connectAlarmMark < 0 )
+	{
+		
+		if("get dmserver start time failed" == getDbStartTime() )		
+		{
+			connectAlarmMark = 1;
+			alarmInfo.itemid = "00020051"; 
+			alarmInfo.data =  dbHost + "数据库服务停止或连接异常";
+			string statTime = MyUtil::getTime(Parameter::sleepTime);
+			if(!is_init) MySendFactory::sendAlarm -> sendNoticeInfo(Parameter::nodeId,statTime,alarmInfo);
+		}
+		
+	}
+	is_init = 0;
 }
 
 
@@ -36,7 +64,7 @@ MetricDao::~MetricDao()
 }
 
 
-void MetricDao::read(vector<Metric*>& metrics, int metricType)
+void MetricDao::read(vector<Metric*>& metrics, int metricType,string stat_time)
 {	
 	
 	CDci * dci = & dbConn;
@@ -97,6 +125,11 @@ void MetricDao::read(vector<Metric*>& metrics, int metricType)
 			}
 		case metric_db:
 			{
+				int session_count = 0;
+				int midhs_count = 0;
+				getAndSendSession(dci,session_count,midhs_count,stat_time);
+				
+				/*
 				const char* sql1 = "select count(*) c from SYSTEM.SYSDBA.V$SESSION";
 				//const char* sql1 = "select count(*) c from SYSTEM.SYSDBA.SYSSESSINFO)";
 				int rec_num, attr_num;
@@ -113,10 +146,12 @@ void MetricDao::read(vector<Metric*>& metrics, int metricType)
 				{
 					LOG_WARN("%s: %s","select session count data failed",error.error_info);
 				}
-		
+			
 				dci->FreeReadData(attrs, attr_num, data_buf);
+				*/
+				
 				string start_time=getDbStartTime();
-				DbMetric * dbMetric=new DbMetric("0",0, sess_count,start_time);
+				DbMetric * dbMetric=new DbMetric("0",midhs_count, session_count,start_time);
 				metrics.push_back(dbMetric);
 				break;
 			}
@@ -155,7 +190,8 @@ void MetricDao::read(vector<Metric*>& metrics, int metricType)
 							else if(col == 1)
 							{
 								tp_name = string(val);
-							}																	       else if(col == 2)
+							}
+							else if(col == 2)
 							{
 								memcpy(&group_id, val, attrs[col].data_size);
 							}

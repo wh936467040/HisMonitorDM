@@ -23,6 +23,7 @@ string Parameter::dbIp;
 string Parameter::dbPort;
 string Parameter::dbUser;
 string Parameter::dbPwd;
+string Parameter::virtualIp;
 string Parameter::myDbLog = "./monitor_db";
 int Parameter::sqlTimeOut = 1000;
 
@@ -145,6 +146,10 @@ int Parameter::setRunParameter()
 			{
 				myDbLog = str_content;
 			}
+			else if(str_code == "virtualIp")
+			{
+				virtualIp = str_content;
+			}
                 }
         }
         fclose(pp);
@@ -200,6 +205,7 @@ void Parameter::print()
 	cout << "dbPort: " << dbPort << endl;
 	cout << "dbUser: " << dbUser << endl;
 	cout << "dbPwd: " << dbPwd << endl;
+	cout << "virtualIp: " <<virtualIp << endl;
 	cout << "printLog: " << myDbLog << endl;
 
 	cout << "sessionAlarmThreshold: " << sessionThreshold << endl;

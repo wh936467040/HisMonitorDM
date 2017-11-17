@@ -2,7 +2,7 @@
 #define __SENDINFO_H__
 
 #include <stdio.h>
-#include <iostream>
+#include <iostream.h>
 #include <map>
 #include <string>
 #include <vector>
@@ -14,7 +14,6 @@ const string TYPE_ITEM_INFO = "1";
 const string TYPE_SERVER_INFO = "2";
 const string TYPE_DISK_INFO = "3";
 const string TYPE_NET_INFO = "4";
-const string SESSION_DETAIL_INFO= "40001";
 //const string TYPE_SHOWSERVICE_INFO = "5";
 const string TYPE_DB_IO_STAT = "6";
 const string TYPE_DB_MEM_STAT = "7";
@@ -44,11 +43,16 @@ const string TYPE_REALTIME_DOWNLOADNUM_INFO = "30";
 const string TYPE_SERVICE_STATUS_INFO = "31";
 const string TYPE_TOP_CPU_INFO = "32";
 const string TYPE_TOP_MEM_INFO = "33";
+const string TYPE_SERVER_PHY = "34";
 const string TYPE_ALL = "43";
 const string TYPE_ALARM_INFO_HARD = "44";
 const string TYPE_ALARM_INFO_DISHARD = "45";
 const string TYPE_ALARM_INFO_SYS = "46";
 const string TYPE_ALARM_INFO_DISYS = "47";
+const string TYPE_ALARM_INFO = "48";
+const string TYPE_DISALARM_INFO = "49";
+const string TYPE_NOTICE_INFO = "50";
+const string TYPE_DSTART_ALARM_INFO = "51";
 
 const string SHOWSERVICE_INFO = "10001";
 const string PROCESS_DYNAMIC_INFO_ = "10002";
@@ -60,13 +64,17 @@ const string DATA_SCADA_DATAQ_MODEL = "10007";
 const string DATA_SCADA_DATAQ_SUBSTATION = "10008";
 const string DATA_SCADA_DATAQ_UPLOAD = "10009";
 const string DATA_SCADA_DATAQ_YX = "10010";
-const string IPMI_INFO = "10017";
 const string SYSCTL_DATA_INFO_ = "10024";
+const string SERVICE_STATUS_INFO ="10030";
 const string PORT_NETINFO = "10031";
 const string TOP_READ = "10032";
 const string TOP_SOCKET_CONNECT = "10033";
 const string TOP_WRITE = "10034";
 const string FILE_VERSION = "10035";
+const string DATA_MAIN_FRAM_NODE = "10048";
+const string DATA_DC_EQU = "10049";
+const string DATA_CLOCK_MGR = "10050";
+const string DATA_PUM_DATA = "10052";
 const string KID_CONNECT_NAME = "20002";
 const string UPDATE_FILE_VERSION = "20004";
 const string RESEND_PKG_FORMULA_DEFINE = "20005";
@@ -87,6 +95,7 @@ const string JBZDH_WARNINGLIST = "30014";
 const string JBZDH_WARNINGNUM = "30015";
 const string FORMULA_CLASS_INFO = "30016";
 const string FORMULA_DEFINE = "30017";
+const string JBZDH_HISVOLONLINERATE = "30018";
 const string SESSION_ALARM_INFO = "40001";
 
 
@@ -253,6 +262,17 @@ struct CORE_INFO {
     string collisions;    /* 发生冲突次数 */
 };
 
+struct ALARM_INFO
+{
+	string itemid;
+	string data;
+};
+
+struct NOTICE_INFO
+{
+	string itemid;
+	string data;
+};
 struct ALARM_INFO_HARD
 {
 	string itemid;
@@ -272,8 +292,6 @@ struct DISALARM_INFO_D5000
 	string endtime;
 	string flag;
 };
-
-
 
 struct SCADA_DATA_QUALITY
 {
@@ -551,9 +569,20 @@ public:
 	
 	int sendD5000AlarmInfo(string nodeid,string starttime, ALARM_INFO_D5000 info);
 	
+	//应用取消告警
 	int sendD5000DisAlarmInfo(string nodeid,DISALARM_INFO_D5000 info);
 	
 	int sendD5000DisAlarmInfo(string nodeid,string itemid,string starttime,string endtime,string flag);
+	
+	//新取消告警，硬件+系统
+	int sendDAlarmInfo(string nodeid,string itemid,string starttime,string endtime,string data);
+	
+	//新告警，硬件+系统
+	int sendAlarmInfo(string nodeid,string starttime, ALARM_INFO info);
+	
+	int sendNoticeInfo(string nodeid,string starttime, NOTICE_INFO info);
+	
+	int sendDStartAlarmInfo(string nodeid,string itemid,string time);
 	
 	int sendScadaData(string nodeid,string time,SCADA_DATA_QUALITY info);
 	

@@ -7,16 +7,17 @@
 #include "MyUtil.h"
 using namespace std;
 
-int getAndSendSession(string time)
+int getAndSendSession(CDci * dci,int& totalSessionCount,int& midhsSessionCount,string time)
 {
 	ErrorInfo_t error1;
 	const char * sql="select app_Name,user_ip,login_name,count(TRX_ID) from system.sysdba.v$session group by app_name,user_ip,login_name";
-	CDci localDb;
+	//CDci localDbi = dci;
 	int i =0;
+	/*
 	while(1)
 	{
 		//会话数高时会出现连接失败的情况
-		if(localDb.Connect(Parameter::dbIp.c_str(),Parameter::dbUser.c_str(),Parameter::dbPwd.c_str(), false, &error1))
+		if)
 		{
 			cout<<"connect db success"<<endl;
 			break;
@@ -30,16 +31,19 @@ int getAndSendSession(string time)
 		}
 		i++;
 		if(i >10) 
+
 		{
 			return -1;
 		}
 	}
+	*/
+	int midhsConnectNum = 0;
+	int totalConnectNum = 0;
 	
-	CDci *dci=&localDb;
 	if(dci==NULL)
 	{
 		cout<<"connect db error "<<endl;
-		localDb.DisConnect(&error1);
+		dci -> DisConnect(&error1);
 		return -1;
 	}
 	
@@ -55,7 +59,7 @@ int getAndSendSession(string time)
 	int ret_code = dci->ReadData(sql, &rec_num, &attr_num, &attrs, &data_buf, &error1);
 	if(ret_code<=0)
 	{
-		localDb.DisConnect(&error1);
+		dci -> DisConnect(&error1);
 		cout<<error1.error_no<<"  "<<error1.error_info<<endl;
 		LOG_ERROR("%s: %s","select session failed!",error1.error_info);
 		return -1;
@@ -106,23 +110,32 @@ int getAndSendSession(string time)
 				}	
 				offset += attrs[col].data_size;
 			}
+			if(appName == "midhs") 
+			{
+				midhsConnectNum = midhsConnectNum + sessionCount;
+			}
+			totalConnectNum = totalConnectNum + sessionCount;
 		}
 		vecAppName=vecAppName.substr(0,vecAppName.size()-1);
 		vecUserIp=vecUserIp.substr(0,vecUserIp.size()-1);
 		vecUserName=vecUserName.substr(0,vecUserName.size()-1);
 		vecSessionCount=vecSessionCount.substr(0,vecSessionCount.size()-1);
+		totalSessionCount = totalConnectNum;
+		midhsSessionCount = midhsConnectNum;
 		vec.push_back(vecAppName);
 		vec.push_back(vecUserIp);
 		vec.push_back(vecUserName);
 		vec.push_back(vecSessionCount);
+		cout << "totalSessionCount = " << totalSessionCount << endl;
+		cout << "midhsSessionCount = " << midhsSessionCount << endl;
 		cout<<vecAppName<<endl;
 		cout<<vecUserIp<<endl;
 		cout<<vecUserName<<endl;
 		cout<<vecSessionCount<<endl;
 	}
-	MySendFactory::sendInfo -> sendAllInfo(SESSION_DETAIL_INFO,Parameter::nodeId,time,vec);
+	MySendFactory::sendInfo -> sendAllInfo("10013",Parameter::nodeId,time,vec);
 	dci->FreeReadData(attrs, attr_num, data_buf);
-	localDb.DisConnect(&error1);
+	//localDb.DisConnect(&error1);
 	return 1;
 }
 

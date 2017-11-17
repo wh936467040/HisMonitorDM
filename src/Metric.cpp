@@ -152,7 +152,6 @@ void DbTablespaceMetric::sendMetric(vector<Metric*>& metrics,string statTime)
 				alarmInfo.itemid="00020009";
 				alarmInfo.data=string(table -> m_tp_name)+" tableUseRatio : "+MyUtil::f2tos(table->m_use_ratio);
 				insertTableIntoAlarmSet(t_tp_name,alarmInfo.data,statTime);
-				sendAlarm.sendD5000AlarmInfo(nodeID, statTime,alarmInfo);
 				//alarmInfo.level="1";
 				MySendFactory::sendAlarm->sendDAlarmInfo(nodeId, statTime,alarmInfo);
 			}
@@ -245,6 +244,7 @@ void DbMemMetric ::sendMetric(vector<Metric*>& metrics,string statTime)
 			useRatio=100*mem->m_counter2/mem->m_counter1;
 		}
 		cout<<"memuseRatio"<<mem->m_counter2<<"/"<<mem->m_counter1<<" result "<<useRatio<<endl;
+		/******************************************************************************
 		if(useRatio>Parameter::memPoolThreshold)
 		{
 			if(memAlarm==0)
@@ -255,6 +255,7 @@ void DbMemMetric ::sendMetric(vector<Metric*>& metrics,string statTime)
 				alarmInfo.data=alarmInfo.data+"数据库缓存池" + " 使用率过高,当前值 " + MyUtil::itos(useRatio)+"%";
 				cout << alarmInfo.data << endl;
 				//alarmInfo.level="4";
+				
 				int ret = MySendFactory::sendAlarm -> sendD5000AlarmInfo(Parameter::nodeId, statTime,alarmInfo);
 				if(ret <= 0 )
 				{
@@ -288,7 +289,7 @@ void DbMemMetric ::sendMetric(vector<Metric*>& metrics,string statTime)
                                 }
 			}
 		}
-
+		***********************************************************/
 		counter1=counter1+";"+MyUtil::ltos(mem->m_counter1);
 		counter2=counter2+";"+MyUtil::ltos(mem->m_counter2);
 		counter3=counter3+";"+MyUtil::ltos(mem->m_counter3);
@@ -332,7 +333,6 @@ void DbMetric:: sendMetric(vector<Metric*>& metrics,string statTime)
 		session_count=session_count+";"+MyUtil::ltos(db->m_session_count);
 		trx_count=trx_count+";"+MyUtil::ltos(db->m_trx_count);
 		startTime=startTime+";"+db->m_start_time;
-		getAndSendSession(statTime);
 		if(db->m_session_count > Parameter::sessionThreshold)
 		{
 			if(sessionAlarm==1)

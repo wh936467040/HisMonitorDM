@@ -1,11 +1,10 @@
 /***************************************************
-file : mainclass of hisMonitor2.2 for dm
+file : mainclass of hisMonitor2.2.3 for dm
 author: wanghao200911@163.com
-date: 2017-07-18
-version:2.2
-update : refactor code;
-	 add log function;
-	 fix bug when connect db;
+date: 2017-11-13
+version:2.3
+update :update some bug in switchDB alarm 
+	
 ***************************************************/
 
 #include "iostream"
@@ -22,17 +21,30 @@ int main()
 	string D5000_HOME = MyUtil::getD5000HomePath();	
 	string conf = D5000_HOME + "/conf/auto_monitor.conf";
 	string alarmConf = D5000_HOME + "/conf/AlarmInfo.conf";
-	
+	//string conf = "../conf/auto_monitor.conf";
+	//string alarmConf = "../conf/AlarmInfo.conf";
 	//single pattern or static class
 	Parameter * para = new Parameter(conf,alarmConf);
 	para -> print();
 	MySendFactory mySend = MySendFactory(para);
+	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020009",MyUtil::getTime(Parameter::sleepTime));
+	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020008",MyUtil::getTime(Parameter::sleepTime));
 	string logFile = para -> myDbLog;
 	Log::get_instance()->init(logFile.c_str(), 8192,20000000 , 0,"NaN"); // logBufferSize,logFileSize,cacheSize
 
 	Runner* runner = new Runner(MyUtil::getTime(Parameter::sleepTime));
-	runner -> collectStaticInfo();
+	
+	{
+		runner -> collectStaticInfo(); //sleep 3 times to avoid insert failed;
+		sleep(3);
+		runner -> collectStaticInfo();
+		sleep(3);
+		runner -> collectStaticInfo();
+		sleep(3);
+	}
+		
 	LOG_INFO("%s : %s","monitor hisdb start",runner -> statTime.c_str());
+	cout << "monitor hisdb start" << endl;
 	while(1)
 	{
 		runner -> statTime =  MyUtil::getTime(Parameter::sleepTime);

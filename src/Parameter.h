@@ -30,6 +30,7 @@ public:
 		static string dbUser;
 		static string dbPwd;
 		static string myDbLog;
+		static string virtualIp;
 		static int sqlTimeOut;
 
 		static string serverIpMain;	
