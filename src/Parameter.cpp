@@ -38,6 +38,7 @@ int Parameter::alarmPortBack;
 int Parameter::sessionThreshold;
 int Parameter::tableSpaceThreshold;
 int Parameter::memPoolThreshold;
+int Parameter::disMidhsSessionThreshold;
 
 Parameter::Parameter(string file1,string file2)
 {
@@ -50,98 +51,98 @@ Parameter::Parameter(string file1,string file2)
 
 int Parameter::setRunParameter()
 {
-        char path[256] = "";
+	char path[256] = "";
 	strcpy(path,configFile.c_str());
-        FILE *pp;
-        pp = fopen(path,"r");
-        if(NULL == pp)
-        {
-                cout << "config file " << path << " open failed " << endl;
+	FILE *pp;
+	pp = fopen(path,"r");
+	if(NULL == pp)
+	{
+		cout << "config file " << path << " open failed " << endl;
 		cout << "check your config path!!!" << endl;
-                exit(0);
-        }
-        string str_code;
-        string str_content;
-        char buf[128];
-        string str = "";
-        int index = 0;
-        while(fgets(buf, 128, pp) != NULL)
-        {
-                str = buf;
-                str = str.substr(0,str.length()-1);
-                index = str.find_first_of(":", 0);
-                if(index > 0)
-                {
-                        str_code = str.substr(0, index);
-                        str_content = str.substr(index+1, str.length());
-                        if(str_code ==  "id" || str_code == "ID")
-                        {
-                                nodeId=str_content;
-                        }
-                        else if(str_code ==  "time" || str_code == "TIME")
-                        {
-                                sleepTime=atoi(str_content.c_str());
-                        }
-                        else if(str_code ==  "serverport" || str_code == "SERVERPORT")
-                        {
-                                serverPortMain=atoi(str_content.c_str());
-                        }
-                        else if(str_code == "serverip" || str_code == "SERVERIP")
-                        {
-                                serverIpMain=str_content;
-                        }
-                        else if(str_code == "serverport_bak" || str_code == "SERVERPORT_BAK")
-        		{                
-	        		serverPortBack=atoi(str_content.c_str());
-                        }
-                        else if(str_code ==  "serverip_bak" || str_code == "SERVERIP_BAK")
-                        {
-                                serverIpBack=str_content;
-                        }
+		exit(0);
+	}
+	string str_code;
+	string str_content;
+	char buf[128];
+	string str = "";
+	int index = 0;
+	while(fgets(buf, 128, pp) != NULL)
+	{
+		str = buf;
+		str = str.substr(0,str.length()-1);
+		index = str.find_first_of(":", 0);
+		if(index > 0)
+		{
+			str_code = str.substr(0, index);
+			str_content = str.substr(index+1, str.length());
+			if(str_code ==  "id" || str_code == "ID")
+			{
+				nodeId=str_content;
+			}
+			else if(str_code ==  "time" || str_code == "TIME")
+			{
+				sleepTime=atoi(str_content.c_str());
+			}
+			else if(str_code ==  "serverport" || str_code == "SERVERPORT")
+			{
+				serverPortMain=atoi(str_content.c_str());
+			}
+			else if(str_code == "serverip" || str_code == "SERVERIP")
+			{
+				serverIpMain=str_content;
+			}
+			else if(str_code == "serverport_bak" || str_code == "SERVERPORT_BAK")
+			{                
+				serverPortBack=atoi(str_content.c_str());
+			}
+			else if(str_code ==  "serverip_bak" || str_code == "SERVERIP_BAK")
+			{
+				serverIpBack=str_content;
+			}
 			else if(str_code ==  "alarmport")
-                        {
-                                alarmPortMain = atoi(str_content.c_str());
-                        }
-                        else if(str_code =="alarmport_bak")
-                        {
-                                alarmPortBack=atoi(str_content.c_str());
-                        }
-                        else if(str_code=="alarmip")
-                        {
-                                alarmIpMain=string(str_content);
-                        }
-                        else if(str_code=="alarmip_bak")
-                        {
-                                alarmIpBack=string(str_content);
-                        }
+			{
+				alarmPortMain = atoi(str_content.c_str());
+			}
+			else if(str_code =="alarmport_bak")
+			{
+				alarmPortBack=atoi(str_content.c_str());
+			}
+			else if(str_code=="alarmip")
+			{
+				alarmIpMain=string(str_content);
+			}
+			else if(str_code=="alarmip_bak")
+			{
+				alarmIpBack=string(str_content);
+			}
 			else if(str_code ==  "dbProcessName")
-                        {
-                                dbProcessName=str_content;
-                        }			
+			{
+				dbProcessName=str_content;
+			}			
 			else if(str_code ==  "dbLogDir")
-                        {
-                                dbLogDir=str_content;
-                        }
+			{
+				dbLogDir=str_content;
+			}
 			else if(str_code ==  "dbType")
-                        {
-                                dbType =str_content;
-                        }
+			{
+				dbType =str_content;
+			}
 			else if(str_code ==  "dbIp")
-                        {
-                                dbIp =str_content;
-                        }
+			{
+				dbIp =str_content;
+			}
 			else if(str_code ==  "dbPort")
-                        {
-                                dbPort =str_content;
-                        }
+			{
+				dbPort =str_content;
+			}
 			else if(str_code ==  "dbUser")
-                        {
-                                dbUser =str_content;
-                        }
+			{
+				dbUser =str_content;
+			}
 			else if(str_code ==  "dbPwd")
-                        {
-                                dbPwd =str_content;
-                        }
+			{
+				dbPwd =str_content;
+			}
 			else if(str_code == "myDbLog")
 			{
 				myDbLog = str_content;
@@ -150,9 +151,9 @@ int Parameter::setRunParameter()
 			{
 				virtualIp = str_content;
 			}
-                }
-        }
-        fclose(pp);
+		}
+	}
+	fclose(pp);
 	return 1;
 }
 
@@ -187,6 +188,10 @@ int Parameter::setAlarmParameter()
 			{
 				sessionThreshold = atoi(str_content.c_str());
 			}
+			else if(str_code == "disMidhsSession" ||str_code == "00020030")
+			{
+				disMidhsSessionThreshold = atoi(str_content.c_str());
+			}
 		}
 	}
 	fclose(pp);
@@ -214,7 +219,7 @@ void Parameter::print()
 	cout << "serverMain: " << serverIpMain << ":" << serverPortMain << endl;
 	cout << "serverBack: " << serverIpBack << ":" << serverPortBack << endl;
 	cout << "alarmMain: " << alarmIpMain << ":" << alarmPortMain << endl;
-        cout << "alarmBack: " << alarmIpBack << ":" << alarmPortBack << endl;
+	cout << "alarmBack: " << alarmIpBack << ":" << alarmPortBack << endl;
 	cout << "sleepTime:" << sleepTime << endl;
 	cout << "***************************************************" << endl;
 }
@@ -224,10 +229,10 @@ void Parameter::print()
 // util test;
 int main()
 {
-	string config = "/home/d5000/xinjiang/conf/auto_monitor.conf";
-	string alarmConfig = "/home/d5000/xinjiang/conf/AlarmInfo.conf";
-	Parameter * para = new Parameter(config,alarmConfig);
-	Parameter::print();
-	return 1;
+string config = "/home/d5000/xinjiang/conf/auto_monitor.conf";
+string alarmConfig = "/home/d5000/xinjiang/conf/AlarmInfo.conf";
+Parameter * para = new Parameter(config,alarmConfig);
+Parameter::print();
+return 1;
 }
-*/
+ */

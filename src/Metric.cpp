@@ -12,9 +12,16 @@ using namespace std;
 static int memAlarm = 0;
 static string memFlag = "";
 static string memAlarmStartTime = "";
+
 static int sessionAlarm = 0;
 static string sessionFlag = "";
 static string sessionAlarmStartTime = "";
+static int sessionAlarmDelayCount = 0 ; // send alarm if sessionAlarmDelayCount == 3;
+
+static int disMidhsSessionAlarm = 0;
+static string disMidhsSessionAlarmFlag = "";
+static string disMidhsSessionAlarmStartTime = "";
+static int disMidhsSessionAlarmDelayCount = 0; //send alarm if disSessionAlarmDelayCount == 3;
 
 Metric::Metric()
 {
@@ -335,7 +342,13 @@ void DbMetric:: sendMetric(vector<Metric*>& metrics,string statTime)
 		startTime=startTime+";"+db->m_start_time;
 		if(db->m_session_count > Parameter::sessionThreshold)
 		{
-			if(sessionAlarm==1)
+			if(sessionAlarm == 1)
+			{
+				sessionAlarmDelayCount = 0; // not need 
+				continue;
+			}
+			sessionAlarmDelayCount ++ ;
+			if(sessionAlarmDelayCount < 3)
 			{
 				continue;
 			}
@@ -345,16 +358,18 @@ void DbMetric:: sendMetric(vector<Metric*>& metrics,string statTime)
 			alarmInfo.data=alarmInfo.data+"数据库会话数" + "过高,当前值" + MyUtil::ltos(db-> m_session_count);
 			cout << alarmInfo.data << endl;
 			//alarmInfo.level="4";
+
 			int ret = MySendFactory::sendAlarm -> sendD5000AlarmInfo(Parameter::nodeId, statTime,alarmInfo);
 			if(ret <= 0 )
-                        {
-                        	LOG_ERROR("%s; %s; alarm time: %s","send session alarm failed",alarmInfo.data.c_str(),statTime.c_str());
-                        }
-                        else
-                        {
-                                LOG_INFO("%s; %s; alarm time: %s","send session alarm ok",alarmInfo.data.c_str(),statTime.c_str());
-                        }
+			{
+				LOG_ERROR("%s; %s; alarm time: %s","send session alarm failed",alarmInfo.data.c_str(),statTime.c_str());
+			}
+			else
+			{
+				LOG_INFO("%s; %s; alarm time: %s","send session alarm ok",alarmInfo.data.c_str(),statTime.c_str());
+			}
 			sessionAlarm=1;
+			sessionAlarmDelayCount = 0;
 			sessionFlag=alarmInfo.data;
 			sessionAlarmStartTime=statTime;
 			cout<<"数据库连接告警"<<endl;
@@ -367,15 +382,70 @@ void DbMetric:: sendMetric(vector<Metric*>& metrics,string statTime)
 				cout<<"发送取消告警;"<<" 当前值 "<<db->m_session_count<<"阈值" << Parameter::sessionThreshold<<endl;
 				sessionAlarm=0;
 				if(ret <= 0 )
-                                {
-                                        LOG_ERROR("%s; %s; alarm time: %s","send session DisAlarm failed",sessionFlag.c_str(),sessionAlarmStartTime.c_str());
-                                }
-                                else
-                                {
-                                        LOG_INFO("%s; %s; alarm time: %s","send session DisAlarm ok",sessionFlag.c_str(),sessionAlarmStartTime.c_str());
-                                }
-				
+				{
+					LOG_ERROR("%s; %s; alarm time: %s","send session DisAlarm failed",sessionFlag.c_str(),sessionAlarmStartTime.c_str());
+				}
+				else
+				{
+					LOG_INFO("%s; %s; alarm time: %s","send session DisAlarm ok",sessionFlag.c_str(),sessionAlarmStartTime.c_str());
+				}
+
 			}
+			sessionAlarmDelayCount = 0;
+		}
+		int disMidhsSessionCount = db->m_session_count - db->m_trx_count; 
+		if( disMidhsSessionCount > Parameter::disMidhsSessionThreshold)
+		{
+			if(disMidhsSessionAlarm == 1)
+			{
+				disMidhsSessionAlarmDelayCount = 0; // not need
+				continue;
+			}
+			disMidhsSessionAlarmDelayCount ++ ;
+			if(disMidhsSessionAlarmDelayCount < 3)
+			{
+				continue;
+			}
+			struct ALARM_INFO_D5000 alarmInfo;
+			alarmInfo.itemid="00020030";
+			alarmInfo.data="";
+			alarmInfo.data=alarmInfo.data+"非midhs数据库会话数" + "过高,当前值" + MyUtil::ltos(disMidhsSessionCount);
+			cout << alarmInfo.data << endl;
+			//alarmInfo.level="4";
+
+			int ret = MySendFactory::sendAlarm -> sendD5000AlarmInfo(Parameter::nodeId, statTime,alarmInfo);
+			if(ret <= 0 )
+			{
+				LOG_ERROR("%s; %s; alarm time: %s","send dis midhs session alarm failed",alarmInfo.data.c_str(),statTime.c_str());
+			}
+			else
+			{
+				LOG_INFO("%s; %s; alarm time: %s","send dis midbs session alarm ok",alarmInfo.data.c_str(),statTime.c_str());
+			}
+			disMidhsSessionAlarm=1;
+			disMidhsSessionAlarmDelayCount = 0;
+			disMidhsSessionAlarmFlag=alarmInfo.data;
+			disMidhsSessionAlarmStartTime=statTime;
+			cout<<"数据库非midhs连接告警"<<endl;
+		}
+		else
+		{
+			if(disMidhsSessionAlarm==1)
+			{
+				int ret = MySendFactory::sendAlarm ->sendD5000DisAlarmInfo(Parameter::nodeId,"00020030",disMidhsSessionAlarmStartTime,statTime,disMidhsSessionAlarmFlag);
+				cout<<"发送取消告警;"<<" 当前值 "<<disMidhsSessionCount<<"阈值" << Parameter::disMidhsSessionThreshold<<endl;
+				disMidhsSessionAlarm=0;
+				if(ret <= 0 )
+				{
+					LOG_ERROR("%s; %s; alarm time: %s","send dis midhs session DisAlarm failed",disMidhsSessionAlarmFlag.c_str(),disMidhsSessionAlarmStartTime.c_str());
+				}
+				else
+				{
+					LOG_INFO("%s; %s; alarm time: %s","send session DisAlarm ok",disMidhsSessionAlarmFlag.c_str(),disMidhsSessionAlarmStartTime.c_str());
+				}
+
+			}
+			disMidhsSessionAlarmDelayCount = 0;
 		}
 	}
 	session_count=session_count.substr(1,session_count.size()-1);
