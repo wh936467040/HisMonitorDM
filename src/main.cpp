@@ -43,7 +43,7 @@ int main()
 		sleep(3);
 	}
 		
-	LOG_INFO("%s : %s","monitor hisdb start",runner -> statTime.c_str());
+	LOG_INFO("%s : %s","monitor_hisdb_v2.2.6 start",runner -> statTime.c_str());
 	cout << "monitor hisdb start" << endl;
 	while(1)
 	{

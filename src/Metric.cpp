@@ -15,6 +15,7 @@ static string memAlarmStartTime = "";
 static int sessionAlarm = 0;
 static string sessionFlag = "";
 static string sessionAlarmStartTime = "";
+static int sessionAlarmDelayCount = 0 ; // send alarm if sessionAlarmDelayCount == 3;
 
 Metric::Metric()
 {
@@ -335,7 +336,13 @@ void DbMetric:: sendMetric(vector<Metric*>& metrics,string statTime)
 		startTime=startTime+";"+db->m_start_time;
 		if(db->m_session_count > Parameter::sessionThreshold)
 		{
-			if(sessionAlarm==1)
+			if(sessionAlarm == 1)
+			{
+				sessionAlarmDelayCount = 0; // not need 
+				continue;
+			}
+			sessionAlarmDelayCount ++ ;
+			if(sessionAlarmDelayCount < 3)
 			{
 				continue;
 			}
@@ -345,6 +352,7 @@ void DbMetric:: sendMetric(vector<Metric*>& metrics,string statTime)
 			alarmInfo.data=alarmInfo.data+"数据库会话数" + "过高,当前值" + MyUtil::ltos(db-> m_session_count);
 			cout << alarmInfo.data << endl;
 			//alarmInfo.level="4";
+			
 			int ret = MySendFactory::sendAlarm -> sendD5000AlarmInfo(Parameter::nodeId, statTime,alarmInfo);
 			if(ret <= 0 )
                         {
@@ -355,6 +363,7 @@ void DbMetric:: sendMetric(vector<Metric*>& metrics,string statTime)
                                 LOG_INFO("%s; %s; alarm time: %s","send session alarm ok",alarmInfo.data.c_str(),statTime.c_str());
                         }
 			sessionAlarm=1;
+			sessionAlarmDelayCount = 0;
 			sessionFlag=alarmInfo.data;
 			sessionAlarmStartTime=statTime;
 			cout<<"数据库连接告警"<<endl;
@@ -376,6 +385,7 @@ void DbMetric:: sendMetric(vector<Metric*>& metrics,string statTime)
                                 }
 				
 			}
+			sessionAlarmDelayCount = 0;
 		}
 	}
 	session_count=session_count.substr(1,session_count.size()-1);
