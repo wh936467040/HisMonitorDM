@@ -35,10 +35,10 @@ MetricDao::MetricDao()
 	}
 	else
 	{
-		//LOG_ERROR("db connect error %d: %s",error.error_no,error.error_info);
+		//LOG_ERROR("%s: %s","db connect failed!",error.error_info);
 		connectMark = -1;
 		dbConn.DisConnect(&error);
-		cout<<"db connect error: " << error.error_no <<error.error_info << endl;
+		cout<<"db connect error: " << error.error_info << endl;
 	}
 
 	if(connectMark < 0 && connectAlarmMark < 0 )
@@ -51,7 +51,6 @@ MetricDao::MetricDao()
 			alarmInfo.data =  dbHost + "数据库服务停止或连接异常";
 			string statTime = MyUtil::getTime(Parameter::sleepTime);
 			if(!is_init) MySendFactory::sendAlarm -> sendNoticeInfo(Parameter::nodeId,statTime,alarmInfo);
-			LOG_ERROR("db connect error %d: %s",error.error_no,error.error_info);
 		}
 		
 	}

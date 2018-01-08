@@ -27,8 +27,10 @@ int main()
 	Parameter * para = new Parameter(conf,alarmConf);
 	para -> print();
 	MySendFactory mySend = MySendFactory(para);
-	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020009",MyUtil::getTime(Parameter::sleepTime));
-	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020008",MyUtil::getTime(Parameter::sleepTime));
+	string startTime = MyUtil::getTime(Parameter::sleepTime);
+	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020009",startTime);
+	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020008",startTime);
+	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020030",startTime);
 	string logFile = para -> myDbLog;
 	Log::get_instance()->init(logFile.c_str(), 8192,20000000 , 0,"NaN"); // logBufferSize,logFileSize,cacheSize
 

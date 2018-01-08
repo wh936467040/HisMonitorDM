@@ -39,13 +39,14 @@ public:
 		static int serverPortBack;
 
 		static string alarmIpMain;
-                static int alarmPortMain;
-                static string alarmIpBack;
-                static int alarmPortBack;
+		static int alarmPortMain;
+		static string alarmIpBack;
+		static int alarmPortBack;
 
 		static int sessionThreshold;
 		static int tableSpaceThreshold;
 		static int memPoolThreshold;
+		static int disMidhsSessionThreshold;
 		
 		Parameter(string ,string ,int ,string ,int);
 		Parameter(string configFile,string alarmFile);
