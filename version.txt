@@ -1,1 +1,13 @@
-version:exe2_his_2.2.7
+###################################################
+version :	exe2_his_2.2.7
+update  :	add not midhs connection alarm 
+date	:	2018-01-08
+###################################################
+version	:	exe2_his_2.2.6
+update  :	fix the bug about send switch alarm ";"
+			update src dir
+date	:	2017-11-13
+###################################################
+version :	exe2_his_2.2.5
+update  :	add midhs connection count monitor
+date    :	2017-09-18
