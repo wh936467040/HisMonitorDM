@@ -14,6 +14,8 @@ enum MetricType
 	metric_db_mem=1,
 	metric_db,
 	metric_db_tablespace,
+	metric_db_sql_time_out,
+	metric_db_long_session,
 	metric_db_io,
 	metric_db_info,
 	metric_db_sql
@@ -142,5 +144,30 @@ public:
 public:
 	DbIoMetric(string dbid, long read_count, long write_count, long read_bytes, long write_bytes);
 	void static sendMetric(vector<Metric*>& metrics,string statTime);
-};	
+};
+
+class DbSqlTimeOutMetric :public Metric
+{
+public:
+	string mUser;
+	string mIp;
+	string mSqlText;
+	long mCpuCallTime;
+	string mAppName;
+public:
+	DbSqlTimeOutMetric(string user,string ip,string sqlText,long cpuCallTime,string appName);
+	void static sendMetric(vector<Metric*>& metrics,string statTime);
+};
+
+class DbLongSessionMetric :public Metric
+{
+public:
+	string mUser;
+	string mLoginTime;
+	string mIp;
+	string mAppName;
+public:
+	DbLongSessionMetric(string user,string ip,string loginTime,string appName);
+	void static sendMetric(vector<Metric*>& metrics,string statTime);
+};
 #endif

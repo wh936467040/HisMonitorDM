@@ -8,6 +8,7 @@
 #include "MySendFactory.h"
 #include "getAndSendSession.h"
 using namespace std;
+using namespace MONITOR_PUBLIC;
 
 static int memAlarm = 0;
 static string memFlag = "";
@@ -84,6 +85,23 @@ DbRlogFileMetric::DbRlogFileMetric(string dbid, int file_num, string current_fil
 DbIoMetric::DbIoMetric(string dbid, long read_count, long write_count, long read_bytes, long write_bytes)
 	:Metric(dbid), m_read_count(read_count), m_write_count(write_count), m_read_bytes(read_bytes), m_write_bytes(write_bytes)
 {}
+
+DbSqlTimeOutMetric::DbSqlTimeOutMetric(string user,string ip,string sqlText,long cpuCallTime,string appName):Metric("0")
+{
+	mUser = user;
+	mIp = ip;
+	mSqlText = sqlText;
+	mCpuCallTime = cpuCallTime;
+	mAppName = appName;
+}
+
+DbLongSessionMetric::DbLongSessionMetric(string user,string ip,string loginTime,string appName):Metric("0")
+{
+	mUser = user;
+	mIp =ip;
+	mLoginTime = loginTime;
+	mAppName = appName;
+}
 
 void  DbIoMetric::sendMetric(vector<Metric*>& metrics,string statTime)
 {
@@ -542,3 +560,115 @@ void DbInfoMetric::sendMetric(vector<Metric*>& metrics,string statTime)
 	return; 
 }
 
+
+
+void  DbSqlTimeOutMetric::sendMetric(vector<Metric*>& metrics,string statTime)
+{
+	if(metrics.empty())
+	{
+		return;
+	}
+	string userVecStr = "user:";
+	string ipVecStr = "ip:";
+	string sqlVecStr = "sql:";
+	string cpuTimeVecStr = "cpuTimeCall:";
+	string appNameVecStr = "appName:";
+	for(vector<Metric*>::iterator it = metrics.begin(); it != metrics.end(); ++it)
+	{
+		Metric * metric = *it;
+		DbSqlTimeOutMetric * db= static_cast<DbSqlTimeOutMetric *>(metric);
+		string user = db -> mUser;
+		string ip = db-> mIp;
+		string sql = db -> mSqlText;
+		string cpuTimeCall = MyUtil::ltos( db -> mCpuCallTime);
+		string app = db ->mAppName;
+
+		if(user =="") user = "unknow";
+		if(ip == "") ip = "unknow";
+		if(sql == "") sql = "unknow";
+		if(app == "") app = "unknow";
+
+		sql = MyUtil::replaceAll(sql,";"," ");
+		sql = MyUtil::replaceAll(sql,">","bigger than ");
+		sql = MyUtil::replaceAll(sql,"<","less than");
+
+		userVecStr = userVecStr + user + ";";
+		ipVecStr = ipVecStr + ip + ";";
+		sqlVecStr = sqlVecStr + sql + ";";
+		cpuTimeVecStr = cpuTimeVecStr + cpuTimeCall + ";";
+		appNameVecStr = appNameVecStr + app + ";";
+		
+	}
+	userVecStr = userVecStr.substr(0,userVecStr.length()-1);
+	ipVecStr = ipVecStr.substr(0,ipVecStr.length()-1);
+	sqlVecStr = sqlVecStr.substr(0,sqlVecStr.length() -1);
+	cpuTimeVecStr = cpuTimeVecStr.substr(0,cpuTimeVecStr.length() -1 );
+	appNameVecStr = appNameVecStr.substr(0,appNameVecStr.length() -1 );
+
+	vector<string >vec;
+	vec.push_back(userVecStr);
+	vec.push_back(ipVecStr);
+	vec.push_back(sqlVecStr);
+	vec.push_back(cpuTimeVecStr);
+	vec.push_back(appNameVecStr);
+
+	MySendFactory::sendInfo -> sendAllInfo("40010",Parameter::nodeId,statTime,vec);
+	/*
+	cout << userVecStr << endl;
+	cout << ipVecStr << endl;
+	cout << sqlVecStr << endl;
+	cout << cpuTimeVecStr << endl;
+	cout << appNameVecStr << endl;
+	*/
+}
+
+
+void  DbLongSessionMetric::sendMetric(vector<Metric*>& metrics,string statTime)
+{
+	if(metrics.empty())
+	{
+		return;
+	}
+	string userVecStr = "user:";
+	string ipVecStr = "ip:";
+	string loginTimeVecStr = "cpuTimeCall:";
+	string appNameVecStr = "appName:";
+
+	for(vector<Metric*>::iterator it = metrics.begin(); it != metrics.end(); ++it)
+	{
+		Metric * metric = *it;
+		DbLongSessionMetric * db= static_cast<DbLongSessionMetric *>(metric);
+		string user = db -> mUser;
+		string ip = db-> mIp;
+		string loginTime = db -> mLoginTime;
+		string app = db -> mAppName;
+
+		if(user =="") user = "unknow";
+		if(ip == "") ip = "unknow";
+		if(loginTime == "")  loginTime = "unknow";
+		if(app == "") app = "unknow";
+		
+		userVecStr = userVecStr + user + ";";
+		ipVecStr = ipVecStr + ip + ";";
+		loginTimeVecStr = loginTimeVecStr + loginTime + ";";
+		appNameVecStr = appNameVecStr + app + ";";
+	}
+	userVecStr = userVecStr.substr(0,userVecStr.length()-1);
+	ipVecStr = ipVecStr.substr(0,ipVecStr.length()-1);
+	loginTimeVecStr = loginTimeVecStr.substr(0,loginTimeVecStr.length() -1);
+	appNameVecStr = appNameVecStr.substr(0,appNameVecStr.length() -1 );
+
+	vector<string >vec;
+	vec.push_back(userVecStr);
+	vec.push_back(ipVecStr);
+	vec.push_back(loginTimeVecStr);
+	vec.push_back(appNameVecStr);
+
+	MySendFactory::sendInfo -> sendAllInfo("10071",Parameter::nodeId,statTime,vec);
+	/*
+	cout << userVecStr << endl;
+	cout << ipVecStr << endl;
+	cout << loginTimeVecStr << endl;
+	cout << appNameVecStr << endl;
+	*/
+}

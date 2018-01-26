@@ -17,6 +17,6 @@ public:
 	static void * switchDbFind();
 	static void * switchDbUseThread();
 	static void * sendStartAlarm();
-        static void * sendSwitchAlarm(string oldNode,string newNode);
+	static void * sendSwitchAlarm(string oldNode,string newNode);
 };
 #endif

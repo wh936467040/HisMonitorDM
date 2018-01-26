@@ -1,10 +1,10 @@
-exe2_his_2.2.7(DM)
+exe2_his_2.2.8(DM)
 ===============
 
 Introduction
 ---------------
 
-exe2_his_2.2.7(DM) monitor dmserver databse 
+exe2_his_2.2.8(DM) monitor dmserver databse 
 
 Install
 ---------------

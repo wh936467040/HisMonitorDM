@@ -12,7 +12,9 @@
 #include "CollectLog.h"
 #include "MetricDao.h"
 
+using namespace MONITOR_PUBLIC;
 using namespace std;
+
 int Runner::switchMark = 1;
 string Runner::nodeName ="";
 Runner::Runner(string time) 
@@ -30,21 +32,32 @@ int Runner::collectSqlUseThread(){
 
 void * Runner::collectHisDb()
 {
-	string time = statTime;   //avoid statTime changed when use thread 
 	int begin, end;
 	begin = metric_db_mem;
 	end = metric_db_io;
-	MetricDao* metricDao = new MetricDao();
-	vector<Metric*> metrics;
-	switchDbFind();   // switch alarm 
-	for(int i = begin; i <= end; i++)
+	while(1)
 	{
-		metricDao->read(metrics, i,time);	
-		metricDao->send(metrics,i,time);
-		metricDao->clear(metrics,i);
+		MetricDao* metricDao = new MetricDao();
+		switchDbFind();   // switch alarm 
+		int count = 0;
+		string time =  MyUtil::getTime(Parameter::sleepTime);
+		for(int i = begin; i <= end; i++)
+		{
+			count ++ ;
+			if( i == metric_db_sql_time_out || i == metric_db_long_session)
+			{
+				if(count == 60)
+				{
+					metricDao -> run(i,time);
+					count = 0; 
+				}
+				continue;
+			} 
+			metricDao->run(i,time);	
+		}
+		delete metricDao;
+		metricDao=NULL;
 	}
-	delete metricDao;
-	metricDao=NULL;
 	//return;
 }
 	

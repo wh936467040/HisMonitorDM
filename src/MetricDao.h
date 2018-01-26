@@ -23,6 +23,7 @@ public:
 	void read(vector<Metric*>& metrics, int metricType,string stat_time);
 	void send(vector<Metric*>& metrics,int& metricType,string stat_time);
 	static void clear(vector<Metric*>& metrics, int metricType);
+	int run(int metricType,string stat_time);
 };
 
 #endif

@@ -14,7 +14,7 @@ update :update some bug in switchDB alarm
 #include "Runner.h"
 #include "Metric.h"
 #include "MySendFactory.h"
-#include "getAndSendSession.h"
+using namespace MONITOR_PUBLIC;
 using namespace std;
 int main()
 {
@@ -27,32 +27,27 @@ int main()
 	Parameter * para = new Parameter(conf,alarmConf);
 	para -> print();
 	MySendFactory mySend = MySendFactory(para);
+	string logFile = para -> myDbLog;
+	Log::get_instance()->init(logFile.c_str(), 8192,20000000 , 0,"NaN"); // logBufferSize,logFileSize,cacheSize
+
 	string startTime = MyUtil::getTime(Parameter::sleepTime);
 	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020009",startTime);
 	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020008",startTime);
 	MySendFactory::sendAlarm -> sendDStartAlarmInfo(Parameter::nodeId,"00020030",startTime);
-	string logFile = para -> myDbLog;
-	Log::get_instance()->init(logFile.c_str(), 8192,20000000 , 0,"NaN"); // logBufferSize,logFileSize,cacheSize
 
 	Runner* runner = new Runner(MyUtil::getTime(Parameter::sleepTime));
 	
-	{
-		runner -> collectStaticInfo(); //sleep 3 times to avoid insert failed;
-		sleep(3);
-		runner -> collectStaticInfo();
-		sleep(3);
-		runner -> collectStaticInfo();
-		sleep(3);
-	}
+	//runner -> collectStaticInfo(); 
+	sleep(3);
 		
-	LOG_INFO("%s : %s","monitor_hisdb_v2.2.6 start",runner -> statTime.c_str());
+	LOG_INFO("%s","monitor_hisdb_v2.2.6 start");
 	cout << "monitor hisdb start" << endl;
+	runner -> collectHisDb();
 	while(1)
 	{
-		runner -> statTime =  MyUtil::getTime(Parameter::sleepTime);
-		runner -> collectHisDb();
-		Log::get_instance()->flush();
+		//Log::get_instance()->flush();
 		sleep(1);
 	}
+	delete runner;
 	return 1;
 }

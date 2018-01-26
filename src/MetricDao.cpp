@@ -9,7 +9,10 @@
 #include "MainDbIpGet.h"
 #include "getAndSendSession.h"
 #include "log.h"
+
 using namespace std;
+using namespace MONITOR_PUBLIC;
+
 string getDbStartTime();
 vector<AlarmTable *> alarmSet;
 struct NOTICE_INFO alarmInfo;
@@ -27,7 +30,7 @@ MetricDao::MetricDao()
 		if(connectAlarmMark >0 )
 		{
 			alarmInfo.itemid="00020052";
-        		alarmInfo.data =  dbHost + "数据库服务连接恢复正常";
+        	alarmInfo.data =  dbHost + "数据库服务连接恢复正常";
 			string statTime = MyUtil::getTime(Parameter::sleepTime);
 			MySendFactory::sendAlarm ->sendNoticeInfo(Parameter::nodeId,statTime,alarmInfo);
 			connectAlarmMark = -1;
@@ -63,6 +66,14 @@ MetricDao::~MetricDao()
 	dbConn.DisConnect(&error);
 }
 
+int MetricDao::run(int metricType,string stat_time)
+{
+	vector<Metric*> metrics;
+	read(metrics, metricType,stat_time);
+	send(metrics,metricType,stat_time);
+	clear(metrics,metricType);
+	return 1;
+}
 
 void MetricDao::read(vector<Metric*>& metrics, int metricType,string stat_time)
 {	
@@ -160,7 +171,7 @@ void MetricDao::read(vector<Metric*>& metrics, int metricType,string stat_time)
 			{
 		//		const char* sql = "select A.DBID,B.NAME,A.GROUP_ID,FILEGROUP_NAME(A.DBID,A.GROUP_ID),A.ID,A.PATH,filebytes(A.DBID, A.GROUP_ID, A.ID) kb, fileuseratio(A.DBID, A.GROUP_ID, A.ID) ratio FROM SYSTEM.SYSDBA.SYSFILES A LEFT JOIN SYSTEM.SYSDBA.SYSDATABASES B ON A.DBID=B.ID WHERE A.GROUP_ID<>1 AND A.GROUP_ID<>2 AND A.GROUP_ID<>32767";
 		//	const char * sql="select tmpID,DB_NAME,0,'not get!',0,'not get!',sum(total)as total_kb,sum(USED)/sum(total) as used_ratio from (select DBID as tmpID,name as DB_NAME,KB as total,KB*RATIO AS USED from (select A.DBID,B.NAME,A.GROUP_ID,FILEGROUP_NAME(A.DBID,A.GROUP_ID),A.ID,A.PATH,filebytes(A.DBID, A.GROUP_ID,A.ID) kb, fileuseratio(A.DBID, A.GROUP_ID, A.ID) ratio  FROM SYSTEM.SYSDBA.SYSFILES A LEFT JOIN SYSTEM.SYSDBA.SYSDATABASES B ON A.DBID=B.ID WHERE A.GROUP_ID<>1 AND A.GROUP_ID<>2 AND A.GROUP_ID<>32767))GRoup by tmpID,DB_NAME";
-		const char * sql = "select tmpID,DB_NAME,0,'not get!',0,'not get!',sum(total)as total_mb,sum(USED)/sum(total) as used_ratio from   (select DBID as tmpID,name as DB_NAME,KB/1024 as total,KB*RATIO/1024 AS USED from (select A.DBID,B.NAME,A.GROUP_ID,FILEGROUP_NAME(A.DBID,A.GROUP_ID),A.ID,A.PATH,filebytes(A.DBID, A.GROUP_ID,A.ID) kb, fileuseratio(A.DBID, A.GROUP_ID, A.ID) ratio  FROM SYSTEM.SYSDBA.SYSFILES A LEFT JOIN SYSTEM.SYSDBA.SYSDATABASES B ON A.DBID=B.ID WHERE A.GROUP_ID<>1 AND A.GROUP_ID<>2 AND A.GROUP_ID<>32767))GRoup by tmpID,DB_NAME";
+			const char * sql = "select tmpID,DB_NAME,0,'not get!',0,'not get!',sum(total)as total_mb,sum(USED)/sum(total) as used_ratio from   (select DBID as tmpID,name as DB_NAME,KB/1024 as total,KB*RATIO/1024 AS USED from (select A.DBID,B.NAME,A.GROUP_ID,FILEGROUP_NAME(A.DBID,A.GROUP_ID),A.ID,A.PATH,filebytes(A.DBID, A.GROUP_ID,A.ID) kb, fileuseratio(A.DBID, A.GROUP_ID, A.ID) ratio  FROM SYSTEM.SYSDBA.SYSFILES A LEFT JOIN SYSTEM.SYSDBA.SYSDATABASES B ON A.DBID=B.ID WHERE A.GROUP_ID<>1 AND A.GROUP_ID<>2 AND A.GROUP_ID<>32767))GRoup by tmpID,DB_NAME";
 				int rec_num, attr_num;
 				char *data_buf;
 				struct ColAttr* attrs;
@@ -294,11 +305,130 @@ void MetricDao::read(vector<Metric*>& metrics, int metricType,string stat_time)
 				}
 				dci->FreeReadData(attrs, attr_num, data_buf);
 				string port=Parameter::dbPort;
-		        	DbInfoMetric* staticMetric = new DbInfoMetric("0", sess_count,version,port);             
+				DbInfoMetric* staticMetric = new DbInfoMetric("0", sess_count,version,port);             
 				metrics.push_back(staticMetric);
 				break;
 
 			}
+		case metric_db_sql_time_out:
+			{
+				const char* sql = "select login_name,user_ip,sql_text,cpu_time_call,app_name from sysdba.v$session where cpu_time_call >=100";
+				int rec_num, attr_num;
+				char *data_buf; 
+				struct ColAttr* attrs;
+				ret_code = dci->ReadData(sql, &rec_num, &attr_num, &attrs, &data_buf, &error);
+				if(ret_code<=0){
+					LOG_WARN("%s: %s","select sql time out  data failed",error.error_info);
+					return ;
+				}
+				if(rec_num <=0)
+				{
+					cout << "rule_buf is null" << endl;
+					//~~若rule_buf为空，rule_attrs必须单独释放~~
+					free(attrs);
+					return ;
+				} 
+				if(ret_code > 0 && rec_num > 0)
+				{
+					int offset = 0;
+					for(int i = 0; i < rec_num; i++)
+					{
+						string user,ip,appName,sqlText;
+						int cpuTimeCall = 0;
+						char* val;
+						for(int col = 0; col < attr_num; col++)
+						{
+							val = (char*)(data_buf + offset);
+							if(col == 0)
+							{
+								user = string(val);
+							}
+							else if(col == 1)
+							{
+								ip = string(val);
+							}
+							else if(col == 2)
+							{
+								sqlText = string(val);
+							}
+							else if(col == 3)
+							{
+								memcpy(&cpuTimeCall, val, attrs[col].data_size);
+							}
+							else if(col == 4)
+							{
+								appName = string(val);
+							}
+							offset += attrs[col].data_size;
+						}
+						DbSqlTimeOutMetric * sqlTimeOutMetric = new DbSqlTimeOutMetric(user,ip,sqlText,cpuTimeCall,appName);
+						metrics.push_back(sqlTimeOutMetric);
+					}
+				}
+				dci->FreeReadData(attrs, attr_num, data_buf);
+				break;
+			}
+		case metric_db_long_session:
+			{
+				string yesterdayTime = MyUtil::getDateTime(-86400);  // -3600 * 24;
+				char sql[512] = "";
+				sprintf(sql,"select login_name,to_char(login_time) as T ,user_ip,app_name from v$session where login_time > '%s' and app_name != 'midhs' or app_Name is null;",yesterdayTime.c_str());
+				cout << sql << endl;
+				int rec_num, attr_num;
+				char *data_buf;
+				struct ColAttr* attrs;
+				ret_code = dci->ReadData(sql, &rec_num, &attr_num, &attrs, &data_buf, &error);
+				if(ret_code<=0){
+					LOG_WARN("%s: %s","dbLongSession  data failed",error.error_info);
+					cout << "select error" << endl;
+					return ;
+				}
+				if(rec_num <=0)
+				{
+					cout << "rule_buf is null" << endl;
+					//~~若rule_buf为空，rule_attrs必须单独释放~~
+					free(attrs);
+					return ;
+				}
+				if(ret_code > 0 && rec_num > 0)
+				{
+					int offset = 0;
+					for(int i = 0; i < rec_num; i++)
+					{
+						string user,ip,appName,loginTime;
+						char* val;
+						for(int col = 0; col < attr_num; col++)
+						{
+							val = (char*)(data_buf + offset);
+							if(col == 0)
+							{
+								user = string(val);
+							//	cout << "user:" << user << endl;
+							}
+							else if(col == 1)
+							{
+								loginTime = string(val);
+							//	cout << "loginTime:" << loginTime << endl;
+							}
+							else if(col == 2)
+							{
+								ip = string(val);
+							//	cout << "ip:" << ip << endl;
+							}
+							else if(col == 3)
+							{
+								appName = string(val);
+							//	cout << "appName:" << appName << endl;
+							}
+							offset += attrs[col].data_size;
+						}
+						DbLongSessionMetric * longSessionMetric = new DbLongSessionMetric(user,ip,loginTime,appName);
+						metrics.push_back(longSessionMetric);
+					}
+				}
+				dci->FreeReadData(attrs, attr_num, data_buf);
+				break;
+		}
 		default:
 			break;
 		}
@@ -333,6 +463,16 @@ void MetricDao::send(vector<Metric*>& metrics, int& metricType, string statTime)
 		case metric_db_info:
 			{
 				DbInfoMetric::sendMetric(metrics,statTime);
+				break;
+			}
+		case metric_db_sql_time_out:
+			{
+				DbSqlTimeOutMetric::sendMetric(metrics,statTime);
+				break;
+			}
+		case metric_db_long_session:
+			{
+				DbLongSessionMetric::sendMetric(metrics,statTime);
 				break;
 			}
 		default:
@@ -371,45 +511,63 @@ string getDbStartTime()
 void MetricDao::clear(vector<Metric*>& metrics, int metricType)
 {
 	for(vector<Metric*>::iterator it = metrics.begin(); it != metrics.end(); ++it)
-        {
-        	switch(metricType)
-                {
-                 	case metric_db_mem:
-                        {
-                      		delete (DbMemMetric *) *it;
-                                *it=NULL;
-                                break;
-                        }
-                        case metric_db:
-                        {
-                                delete (DbMetric *) * it;
-                                *it=NULL;
-                                break;
-                        }
-                        case metric_db_tablespace:
-                        {
-                        	delete (DbTablespaceMetric *) *it;
-                                *it=NULL;
-                                break;
-                        }
-                        case metric_db_io:
-                        {
-                                delete (DbIoMetric *) *it;
-                                *it=NULL;
-                                break;
-                        }
+	{
+		/*
+		if((*it) == NULL)
+		{
+			continue;
+		}
+		*/
+		switch(metricType)
+		{
+			case metric_db_mem:
+				{
+					delete (DbMemMetric *) *it;
+					*it=NULL;
+					break;
+				}
+			case metric_db:
+				{
+					delete (DbMetric *) * it;
+					*it=NULL;
+					break;
+				}
+			case metric_db_tablespace:
+				{
+					delete (DbTablespaceMetric *) *it;
+					*it=NULL;
+					break;
+				}
+			case metric_db_io:
+				{
+					delete (DbIoMetric *) *it;
+					*it=NULL;
+					break;
+				}
 			case metric_db_sql:
-			{
-                                delete (DbSqlMetric *) *it;
-                                *it=NULL;
-                                break;
-			}
-                        default:
-                        {
-                                //      return ;
-                        }
-      		}
+				{
+					delete (DbSqlMetric *) *it;
+					*it=NULL;
+					break;
+				}
+			case metric_db_sql_time_out:
+				{
+					delete (DbSqlTimeOutMetric *) *it;
+					*it = NULL;
+					break;
+				}
+			case metric_db_long_session:
+				{
+					delete (DbLongSessionMetric *) *it;
+					*it = NULL;
+					break;
+				}
+			default:
+				{
+					//      return ;
+				}
+		}
 	}
-        metrics.clear();
-        vector<Metric *>(metrics).swap(metrics);
+	metrics.clear();
+	vector<Metric *>(metrics).swap(metrics);
 }

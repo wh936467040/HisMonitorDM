@@ -1,4 +1,9 @@
 ###################################################
+version :	exe2_his_2.2.8
+update  :	add not midhs long connection collect
+		add sql time out collect;
+date	:	2018-01-25
+###################################################
 version :	exe2_his_2.2.7
 update  :	add not midhs connection alarm 
 date	:	2018-01-08

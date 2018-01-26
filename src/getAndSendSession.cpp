@@ -5,6 +5,7 @@
 #include "sendinfo.h"
 #include "MySendFactory.h"
 #include "MyUtil.h"
+using namespace MONITOR_PUBLIC;
 using namespace std;
 
 int getAndSendSession(CDci * dci,int& totalSessionCount,int& midhsSessionCount,string time)
@@ -126,12 +127,14 @@ int getAndSendSession(CDci * dci,int& totalSessionCount,int& midhsSessionCount,s
 		vec.push_back(vecUserIp);
 		vec.push_back(vecUserName);
 		vec.push_back(vecSessionCount);
+		/*
 		cout << "totalSessionCount = " << totalSessionCount << endl;
 		cout << "midhsSessionCount = " << midhsSessionCount << endl;
 		cout<<vecAppName<<endl;
 		cout<<vecUserIp<<endl;
 		cout<<vecUserName<<endl;
 		cout<<vecSessionCount<<endl;
+		*/
 	}
 	MySendFactory::sendInfo -> sendAllInfo("10013",Parameter::nodeId,time,vec);
 	dci->FreeReadData(attrs, attr_num, data_buf);
